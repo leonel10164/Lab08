@@ -13,15 +13,22 @@ class TaskViewModel(private val dao: TaskDao) : ViewModel() {
     val tasks: StateFlow<List<Task>> = _tasks
 
     init {
+        loadTasks()
+    }
+
+    private fun loadTasks() {
         viewModelScope.launch {
             _tasks.value = dao.getAllTasks()
         }
     }
 
     fun addTask(description: String) {
-        val newTask = Task(description = description)
+        if (description.isBlank()) return
+
         viewModelScope.launch {
-            dao.insertTask(newTask)
+            dao.insertTask(
+                Task(description = description.trim())
+            )
             _tasks.value = dao.getAllTasks()
         }
     }
@@ -32,6 +39,25 @@ class TaskViewModel(private val dao: TaskDao) : ViewModel() {
                 isCompleted = !task.isCompleted
             )
             dao.updateTask(updatedTask)
+            _tasks.value = dao.getAllTasks()
+        }
+    }
+
+    fun editTask(task: Task, newDescription: String) {
+        if (newDescription.isBlank()) return
+
+        viewModelScope.launch {
+            val updatedTask = task.copy(
+                description = newDescription.trim()
+            )
+            dao.updateTask(updatedTask)
+            _tasks.value = dao.getAllTasks()
+        }
+    }
+
+    fun deleteTask(task: Task) {
+        viewModelScope.launch {
+            dao.deleteTask(task)
             _tasks.value = dao.getAllTasks()
         }
     }
